@@ -1,7 +1,7 @@
 ---
 title: The title of your Semesterproject
 subtitle: A subtle subtitle
-author: Firstname1 Lastname1 and Firstname2 Lastname2
+author: Manuel Bussmann
 output: html_document
 
 ---
