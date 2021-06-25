@@ -23,18 +23,33 @@ library(lubridate)    # To handle dates and times
 boar = wildschwein_BE
 boar_meta = wildschwein_metadata
 
+## Load the background map
+map_BE = terra::rast("pk100_BE.tif")
+
 ################################
 ## Step 2: Data preprocessing ##
 ################################
 
-## Identify the fertile males and females
-# Get the names, sex and weight of all wild boars in BE
-boar_weight = boar_meta[boar_meta$TierName %in% boar$TierName,
+## Select the data for the mating season 2015/16
+# Add a date only column to the data frame "boar"
+boar = boar %>%
+  mutate(Date = as.Date(boar$DatetimeUTC))
+
+# select the data based on the dates of the mating season
+season = boar[boar$Date >= "2015-11-01"
+              & boar$Date <= "2016-04-30",]
+
+## Identify the fertile males and females that were
+## tracked during the mating season
+# Get the names, sex and weight of all wild boars
+boar_weight = boar_meta[boar_meta$TierName %in% season$TierName,
               c("TierName","Sex","Gewicht")]
 
 # Order them by weight
 boar_weight = boar_weight[order(boar_weight$Gewicht),]
 
 # Divide them up according to sex
-males = boar_weight[boar_weight$Sex=="m",]      # 6 males
-females = boar_weight[boar_weight$Sex=="f",]    # 13 females
+males = boar_weight[boar_weight$Sex=="m",]
+females = boar_weight[boar_weight$Sex=="f",]
+unique(males$TierName)                          # 2 males
+unique(females$TierName)                        # 6 females
