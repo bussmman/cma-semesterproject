@@ -36,14 +36,24 @@ loc = function(dat,ref){
   
   for (i in 1:l){
     if (dat$DatetimeUTC[i] %in% animal$DatetimeUTC){
-      dat$E[i] = animal[animal$DatetimeUTC==dat$DatetimeUTC[i],"E"]
-      dat$N[i] = animal[animal$DatetimeUTC==dat$DatetimeUTC[i],"N"]
+      dat$E[i] = animal[animal$DatetimeUTC==dat$DatetimeUTC[i],5]
+      dat$N[i] = animal[animal$DatetimeUTC==dat$DatetimeUTC[i],6]
     } else {
       dat$E[i] = NA
       dat$N[i] = NA
     }
   }
   return(dat)
+}
+
+# Calculate the Euclidian distance between a male and a
+# female wild boar at all times
+euc_dis = function(male,female){
+  male = male %>%
+    mutate(n=sqrt((male$E-female$E)^2+(male$N-female$N)^2))
+  
+  names(male)[names(male)=="n"] = deparse(substitute(female))
+  return(male)
 }
 
 ################################
@@ -89,44 +99,111 @@ Amos = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Amos$E = NA
 Amos$N = NA
 Amos = loc(Amos,season)
+Amos$E[lengths(Amos$E)!=1] = NA
+Amos$E = as.double(unlist(Amos$E))
+Amos$N[lengths(Amos$N)!=1] = NA
+Amos$N = as.double(unlist(Amos$N))
 
 Ueli = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Ueli$E = NA
 Ueli$N = NA
 Ueli = loc(Ueli,season)
+Ueli$E[lengths(Ueli$E)!=1] = NA
+Ueli$E = as.double(unlist(Ueli$E))
+Ueli$N[lengths(Ueli$N)!=1] = NA
+Ueli$N = as.double(unlist(Ueli$N))
 
 # Females
 Venus = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Venus$E = NA
 Venus$N = NA
 Venus = loc(Venus,season)
+Venus$E[lengths(Venus$E)!=1] = NA
+Venus$E = as.double(unlist(Venus$E))
+Venus$N[lengths(Venus$N)!=1] = NA
+Venus$N = as.double(unlist(Venus$N))
 
 Gaby = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Gaby$E = NA
 Gaby$N = NA
 Gaby = loc(Gaby,season)
+Gaby$E[lengths(Gaby$E)!=1] = NA
+Gaby$E = as.double(unlist(Gaby$E))
+Gaby$N[lengths(Gaby$N)!=1] = NA
+Gaby$N = as.double(unlist(Gaby$N))
 
 Miriam = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Miriam$E = NA
 Miriam$N = NA
 Miriam = loc(Miriam,season)
+Miriam$E[lengths(Miriam$E)!=1] = NA
+Miriam$E = as.double(unlist(Miriam$E))
+Miriam$N[lengths(Miriam$N)!=1] = NA
+Miriam$N = as.double(unlist(Miriam$N))
 
 Caroline = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Caroline$E = NA
 Caroline$N = NA
 Caroline = loc(Caroline,season)
+Caroline$E[lengths(Caroline$E)!=1] = NA
+Caroline$E = as.double(unlist(Caroline$E))
+Caroline$N[lengths(Caroline$N)!=1] = NA
+Caroline$N = as.double(unlist(Caroline$N))
 
 Evelin = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Evelin$E = NA
 Evelin$N = NA
 Evelin = loc(Evelin,season)
+Evelin$E[lengths(Evelin$E)!=1] = NA
+Evelin$E = as.double(unlist(Evelin$E))
+Evelin$N[lengths(Evelin$N)!=1] = NA
+Evelin$N = as.double(unlist(Evelin$N))
 
 Frida = data.frame(DatetimeUTC=seq(starttime,endtime,900))
 Frida$E = NA
 Frida$N = NA
 Frida = loc(Frida,season)
+Frida$E[lengths(Frida$E)!=1] = NA
+Frida$E = as.double(unlist(Frida$E))
+Frida$N[lengths(Frida$N)!=1] = NA
+Frida$N = as.double(unlist(Frida$N))
 
 #################################
 ## Step 3: Modelling procedure ##
 #################################
 
+## Calculate the Euclidian distance between all the females
+## and the male at all times for each male
+# Amos
+Amos = euc_dis(Amos,Venus)
+Amos = euc_dis(Amos,Gaby)
+Amos = euc_dis(Amos,Miriam)
+Amos = euc_dis(Amos,Caroline)
+Amos = euc_dis(Amos,Evelin)
+Amos = euc_dis(Amos,Frida)
+
+# Ueli
+Ueli = euc_dis(Ueli,Venus)
+Ueli = euc_dis(Ueli,Gaby)
+Ueli = euc_dis(Ueli,Miriam)
+Ueli = euc_dis(Ueli,Caroline)
+Ueli = euc_dis(Ueli,Evelin)
+Ueli = euc_dis(Ueli,Frida)
+
+## Check for the minimal distance that occured between all
+## the females and the male at all times for each male
+# Amos
+min(Amos$Venus, na.rm=TRUE)
+min(Amos$Gaby, na.rm=TRUE)
+min(Amos$Miriam, na.rm=TRUE)      # very likely meeting
+min(Amos$Caroline, na.rm=TRUE)    # very likely meeting
+min(Amos$Evelin, na.rm=TRUE) 
+min(Amos$Frida, na.rm=TRUE)       # likely meeting
+
+# Ueli
+min(Ueli$Venus, na.rm=TRUE)
+min(Ueli$Gaby, na.rm=TRUE)        # no non-NA value!
+min(Ueli$Miriam, na.rm=TRUE)      # very likely meeting
+min(Ueli$Caroline, na.rm=TRUE)    # very likely meeting
+min(Ueli$Evelin, na.rm=TRUE) 
+min(Ueli$Frida, na.rm=TRUE)       # very likely meeting
