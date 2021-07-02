@@ -17,6 +17,7 @@ library(sf)           # to handle spatial vector data
 library(terra)        # to handle raster data
 library(lubridate)    # to handle dates and times
 library(tmap)         # to create thematic maps
+#library(raster)
 #library(zoo)          # to smoothen using moving window functions
 #library(SimilarityMeasures)   # Similarity measures
 
@@ -26,6 +27,9 @@ boar_meta = wildschwein_metadata
 
 ## Load the background map
 map_BE = terra::rast("pk100_BE.tif")
+# map_BE = raster("pk100_BE.tif")
+# map_BE <- as(map_BE, "SpatialPixelsDataFrame")
+# map_BE <- as.data.frame(map_BE)
 
 ## Create functions that are needed later on
 # Relate the tracked location to the mating season
@@ -35,9 +39,9 @@ loc = function(dat,ref){
   animal = ref[ref$TierName==name,]
   
   for (i in 1:l){
-    if (dat$DatetimeUTC[i] %in% animal$DatetimeUTC){
-      dat$E[i] = animal[animal$DatetimeUTC==dat$DatetimeUTC[i],5]
-      dat$N[i] = animal[animal$DatetimeUTC==dat$DatetimeUTC[i],6]
+    if (dat$DatetimeUTC[i] %in% animal$DatetimeUTC_rounded){
+      dat$E[i] = animal[animal$DatetimeUTC_rounded==dat$DatetimeUTC[i],5]
+      dat$N[i] = animal[animal$DatetimeUTC_rounded==dat$DatetimeUTC[i],6]
     } else {
       dat$E[i] = NA
       dat$N[i] = NA
@@ -56,6 +60,56 @@ euc_dis = function(male,female){
   return(male)
 }
 
+# Subset a dataset for the time of a meeting
+traj = function(male,female,dat,threshold){
+  name = deparse(substitute(female))
+  
+  t = male$DatetimeUTC[which(male[,name] <= threshold)]
+  dat[dat$DatetimeUTC_rounded %in% t,]
+}
+
+# Define Trajectory ID for each segment
+traj_ID = function(dat){
+  l = length(dat$DatetimeUTC_rounded)
+  ID = 1
+  dat$timelag = lead(dat$DatetimeUTC_rounded)
+  dat$timediff = dat$timelag - dat$DatetimeUTC_rounded
+  
+  dat = dat %>%
+    mutate(Traj_ID = NA)
+  
+  for (i in 1:l){
+    dat$Traj_ID[i] = ID
+    td = as.numeric(dat$timediff[i], units="secs")
+    td[is.na(td)] = 0
+    
+    if (td != 900){
+      ID = ID + 1
+    }
+  }
+  return(dat)
+}
+
+# Omit trajectories with a length smaller than a set limit
+omit = function(dat,lim){
+  dat %>%
+    group_by(Traj_ID) %>%
+    mutate(n_pos = n()) %>%
+    filter(n_pos > lim)
+}
+
+# Plot the trajectories of the boars during a potential
+# mating event
+traj_plot = function(dat,male){
+  ggplot(dat,aes(x=E, y=N, group=interaction(TierName,Traj_ID))) +
+    geom_path(aes(color=TierName)) +
+    geom_point(aes(color=TierName)) +
+    xlim(min(dat$E[dat$TierName==male])-500,
+         max(dat$E[dat$TierName==male])+500) +
+    ylim(min(dat$N[dat$TierName==male])-500,
+         max(dat$N[dat$TierName==male])+500)
+}
+
 ################################
 ## Step 2: Data preprocessing ##
 ################################
@@ -66,16 +120,35 @@ endtime = as_datetime("2016-04-30 23:45:00 UTC")
 
 ## Select the data for the mating season
 # Round the times to 15 minutes to be able to match them
-boar$DatetimeUTC = lubridate::round_date(
-  boar$DatetimeUTC,"15 minutes")
+boar = boar %>%
+  mutate(DatetimeUTC_rounded
+         = lubridate::round_date(boar$DatetimeUTC,"15 minutes"))
 
 # # Add a date only column to the data frame "boar"
 # boar = boar %>%
 #   mutate(Date = as.Date(boar$DatetimeUTC))
 
 # select the data based on the dates of the mating season
-season = boar[boar$DatetimeUTC >= starttime
-              & boar$DatetimeUTC <= endtime,]
+season = boar[boar$DatetimeUTC_rounded >= starttime
+              & boar$DatetimeUTC_rounded <= endtime,]
+
+# Calculate the following position and timestamp for each
+# data point
+season = season %>%
+  group_by(CollarID) %>%
+  mutate(timelag=lead(DatetimeUTC_rounded),
+         E_lag=lead(E),N_lag=lead(N),
+         timediff=timelag-DatetimeUTC_rounded)
+season = ungroup(season)
+
+# Interpolate the E und N positions to the rounded Datetime
+season$E = season$E + (
+  as.numeric(season$DatetimeUTC-season$DatetimeUTC_rounded)
+  /as.numeric(season$timediff)*(season$E_lag-season$E))
+
+season$N = season$N + (
+  as.numeric(season$DatetimeUTC-season$DatetimeUTC_rounded)
+  /as.numeric(season$timediff)*(season$N_lag-season$N))
 
 ## Identify the fertile males and females that were
 ## tracked during the mating season
@@ -191,7 +264,7 @@ Ueli = euc_dis(Ueli,Evelin)
 Ueli = euc_dis(Ueli,Frida)
 
 ## Check for the minimal distance that occured between all
-## the females and the male at all times for each male
+## the females and the male for each male
 # Amos
 min(Amos$Venus, na.rm=TRUE)
 min(Amos$Gaby, na.rm=TRUE)
@@ -207,3 +280,89 @@ min(Ueli$Miriam, na.rm=TRUE)      # very likely meeting
 min(Ueli$Caroline, na.rm=TRUE)    # very likely meeting
 min(Ueli$Evelin, na.rm=TRUE) 
 min(Ueli$Frida, na.rm=TRUE)       # very likely meeting
+
+
+## Next Steps:
+# 1. Define a euclidian distance threshold for the definition
+# of a meeting (e.g. 50 m or 100m)
+# 2. Find the datetimes for all meetings
+# 3. Look at the trajectories (for all boars) during
+# (and before/after) the meetings
+# --> For how long did the value fall below the threshold ?
+# (was the meeting likely accidental or not?)
+# --> were other wild boars present?
+# 4. Look for tell-tale movement patterns (if they exist)
+# 5. Look at the environmental information
+# (Surroundings, time of the day, etc.)
+
+## Examine all the "very likely meetings": Define a euclidian
+## distance threshold (50m, 100m) and examine the trajectories
+## of all wild boars at the times, when the "meeting couple"
+## was closer to each other than the set threshold
+
+## Amos & Miriam
+# Threshold = 50m
+AM50 = traj(Amos,Miriam,season,50)
+AM50 = traj_ID(AM50)
+AM50 = omit(AM50,1)
+traj_plot(AM50,"Amos")
+
+# Threshold = 100m
+AM100 = traj(Amos,Miriam,season,100)
+AM100 = traj_ID(AM100)
+AM100 = omit(AM100,1)
+traj_plot(AM100,"Amos")
+
+## Amos & Caroline
+# Threshold = 50m
+AC50 = traj(Amos,Caroline,season,50)
+AC50 = traj_ID(AC50)
+AC50 = omit(AC50,1)
+traj_plot(AC50,"Amos")
+
+# Threshold = 100m
+AC100 = traj(Amos,Caroline,season,100)
+AC100 = traj_ID(AC100)
+AC100 = omit(AC100,1)
+traj_plot(AC100,"Amos")
+
+## Ueli & Miriam
+# Threshold = 50m
+UM50 = traj(Ueli,Miriam,season,50)
+UM50 = traj_ID(UM50)
+UM50 = omit(UM50,1)
+traj_plot(UM50,"Ueli")
+
+# Threshold = 100m
+UM100 = traj(Ueli,Miriam,season,100)
+UM100 = traj_ID(UM100)
+UM100 = omit(UM100,1)
+traj_plot(UM100,"Ueli")
+
+## Ueli & Caroline
+# Threshold = 50m
+UC50 = traj(Ueli,Caroline,season,50)
+UC50 = traj_ID(UC50)
+UC50 = omit(UC50,1)
+traj_plot(UC50,"Ueli")
+
+# Threshold = 100m
+UC100 = traj(Ueli,Caroline,season,100)
+UC100 = traj_ID(UC100)
+UC100 = omit(UC100,1)
+traj_plot(UC100,"Ueli")
+
+## Ueli & Frida
+# Threshold = 50m
+UF50 = traj(Ueli,Frida,season,50)
+UF50 = traj_ID(UF50)
+UF50 = omit(UF50,1)
+traj_plot(UF50,"Ueli")
+
+# Threshold = 100m
+UF100 = traj(Ueli,Frida,season,100)
+UF100 = traj_ID(UF100)
+UF100 = omit(UF100,1)
+traj_plot(UF100,"Ueli")
+
+## (Merge Data together using join (inner,left, outer, etc.))
