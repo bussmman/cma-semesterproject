@@ -79,12 +79,14 @@ traj_ID = function(dat){
     mutate(Traj_ID = NA)
   
   for (i in 1:l){
-    dat$Traj_ID[i] = ID
     td = as.numeric(dat$timediff[i], units="secs")
     td[is.na(td)] = 0
     
     if (td != 900){
+      dat$Traj_ID[i] = ID
       ID = ID + 1
+    } else {
+      dat$Traj_ID[i] = ID
     }
   }
   return(dat)
@@ -271,7 +273,7 @@ min(Amos$Gaby, na.rm=TRUE)
 min(Amos$Miriam, na.rm=TRUE)      # very likely meeting
 min(Amos$Caroline, na.rm=TRUE)    # very likely meeting
 min(Amos$Evelin, na.rm=TRUE) 
-min(Amos$Frida, na.rm=TRUE)       # likely meeting
+min(Amos$Frida, na.rm=TRUE)
 
 # Ueli
 min(Ueli$Venus, na.rm=TRUE)
@@ -307,10 +309,12 @@ AM50 = traj_ID(AM50)
 AM50 = omit(AM50,1)
 traj_plot(AM50,"Amos")
 
+# Meeting 1: 2015-11-15 18:15:00 - 2015-11-15 18:30:00
+
 # Threshold = 100m
 AM100 = traj(Amos,Miriam,season,100)
 AM100 = traj_ID(AM100)
-AM100 = omit(AM100,1)
+AM100 = omit(AM100,3)
 traj_plot(AM100,"Amos")
 
 ## Amos & Caroline
@@ -319,6 +323,11 @@ AC50 = traj(Amos,Caroline,season,50)
 AC50 = traj_ID(AC50)
 AC50 = omit(AC50,1)
 traj_plot(AC50,"Amos")
+
+# Meeting 2: 2015-11-14 08:45:00 - 2015-11-14 15:00:00
+# Meeting 3: 2015-11-14 15:30:00 - 2015-11-14 17:15:00
+# There is only one point missing between meeting 2 and 3
+# --> counts as one meeting (Meeting 2)
 
 # Threshold = 100m
 AC100 = traj(Amos,Caroline,season,100)
@@ -333,6 +342,8 @@ UM50 = traj_ID(UM50)
 UM50 = omit(UM50,1)
 traj_plot(UM50,"Ueli")
 
+# Meeting 3: 2016-02-03 00:00:00 - 2016-02-03 00:30:00
+
 # Threshold = 100m
 UM100 = traj(Ueli,Miriam,season,100)
 UM100 = traj_ID(UM100)
@@ -345,6 +356,12 @@ UC50 = traj(Ueli,Caroline,season,50)
 UC50 = traj_ID(UC50)
 UC50 = omit(UC50,1)
 traj_plot(UC50,"Ueli")
+
+# Meeting 4: 2016-03-24 20:45:00 - 2016-03-24 21:00:00
+# Meeting 5: 2016-03-24 21:30:00 - 2016-03-24 21:45:00
+# There is only one point missing between meeting 4 and 5
+# --> counts as one meeting (Meeting 4)
+# Meeting 5: 2016-04-08 20:45:00 - 2016-04-08 21:30:00
 
 # Threshold = 100m
 UC100 = traj(Ueli,Caroline,season,100)
@@ -359,10 +376,18 @@ UF50 = traj_ID(UF50)
 UF50 = omit(UF50,1)
 traj_plot(UF50,"Ueli")
 
+# Meeting 6: 2016-02-01 06:45:00 - 2016-02-01 15:15:00
+# Meeting 7: 2016-02-02 23:45:00 - 2016-02-03 00:15:00
+# --> Corresponds to Meeting 3 (according to the timestamp)
+# --> Refered to as Meeting 3!
+# Meeting 7: 2016-04-11 00:45:00 - 2016-04-11 01:00:00
+# Meeting 8: 2016-04-11 23:30:00 - 2016-04-12 00:45:00
+# Meeting 9: 2016-04-12 20:30:00 - 2016-04-12 23:15:00
+#Meeting 10: 2016-04-13 07:45:00 - 2016-04-13 09:00:00
+#Meeting 11: 2016-04-28 22:30:00 - 2016-04-28 23:00:00
+
 # Threshold = 100m
 UF100 = traj(Ueli,Frida,season,100)
 UF100 = traj_ID(UF100)
 UF100 = omit(UF100,1)
 traj_plot(UF100,"Ueli")
-
-## (Merge Data together using join (inner,left, outer, etc.))
