@@ -17,10 +17,7 @@ library(sf)           # to handle spatial vector data
 library(terra)        # to handle raster data
 library(lubridate)    # to handle dates and times
 library(tmap)         # to create thematic maps
-library(gridExtra)
-#library(raster)
-#library(zoo)          # to smoothen using moving window functions
-#library(SimilarityMeasures)   # Similarity measures
+library(gridExtra)    # to work with "grid" graphics
 
 ## Load the wild boar data and metadata
 boar = wildschwein_BE
@@ -28,9 +25,6 @@ boar_meta = wildschwein_metadata
 
 ## Load the background map
 map_BE = terra::rast("pk100_BE.tif")
-# map_BE = raster("pk100_BE.tif")
-# map_BE <- as(map_BE, "SpatialPixelsDataFrame")
-# map_BE <- as.data.frame(map_BE)
 
 ## Create functions that are needed later on
 # Relate the tracked location to the mating season
@@ -141,10 +135,6 @@ endtime = as_datetime("2016-04-30 23:45:00 UTC")
 boar = boar %>%
   mutate(DatetimeUTC_rounded
          = lubridate::round_date(boar$DatetimeUTC,"15 minutes"))
-
-# # Add a date only column to the data frame "boar"
-# boar = boar %>%
-#   mutate(Date = as.Date(boar$DatetimeUTC))
 
 # select the data based on the dates of the mating season
 season = boar[boar$DatetimeUTC_rounded >= starttime
@@ -318,12 +308,6 @@ traj_plot(AM50,"Amos")
 
 # Meeting 1: 2015-11-15 18:15:00 - 2015-11-15 18:30:00
 
-# # Threshold = 100m
-# AM100 = traj(Amos,Miriam,season,100)
-# AM100 = traj_ID(AM100)
-# AM100 = omit(AM100,3)
-# traj_plot(AM100,"Amos")
-
 # Amos & Caroline (Threshold = 50m)
 AC50 = traj(Amos,Caroline,season,50)
 AC50 = traj_ID(AC50)
@@ -335,12 +319,6 @@ traj_plot(AC50,"Amos")
 # There is only one point missing between meeting 2 and 3
 # --> counts as one meeting (Meeting 2)
 
-# # Threshold = 100m
-# AC100 = traj(Amos,Caroline,season,100)
-# AC100 = traj_ID(AC100)
-# AC100 = omit(AC100,1)
-# traj_plot(AC100,"Amos")
-
 # Ueli & Miriam (Threshold = 50m)
 UM50 = traj(Ueli,Miriam,season,50)
 UM50 = traj_ID(UM50)
@@ -348,12 +326,6 @@ UM50 = omit(UM50,1)
 traj_plot(UM50,"Ueli")
 
 # Meeting 3: 2016-02-03 00:00:00 - 2016-02-03 00:30:00
-
-# # Threshold = 100m
-# UM100 = traj(Ueli,Miriam,season,100)
-# UM100 = traj_ID(UM100)
-# UM100 = omit(UM100,1)
-# traj_plot(UM100,"Ueli")
 
 # Ueli & Caroline (Threshold = 50m)
 UC50 = traj(Ueli,Caroline,season,50)
@@ -366,12 +338,6 @@ traj_plot(UC50,"Ueli")
 # There is only one point missing between meeting 4 and 5
 # --> counts as one meeting (Meeting 4)
 # Meeting 5: 2016-04-08 20:45:00 - 2016-04-08 21:30:00
-
-# # Threshold = 100m
-# UC100 = traj(Ueli,Caroline,season,100)
-# UC100 = traj_ID(UC100)
-# UC100 = omit(UC100,1)
-# traj_plot(UC100,"Ueli")
 
 # Ueli & Frida (Threshold = 50m)
 UF50 = traj(Ueli,Frida,season,50)
@@ -388,12 +354,6 @@ traj_plot(UF50,"Ueli")
 # Meeting 9: 2016-04-12 20:30:00 - 2016-04-12 23:15:00
 #Meeting 10: 2016-04-13 07:45:00 - 2016-04-13 09:00:00
 #Meeting 11: 2016-04-28 22:30:00 - 2016-04-28 23:00:00
-
-# # Threshold = 100m
-# UF100 = traj(Ueli,Frida,season,100)
-# UF100 = traj_ID(UF100)
-# UF100 = omit(UF100,1)
-# traj_plot(UF100,"Ueli")
 
 ## Plot selected Meeting events of interest
 # Meeting 2: Amos and Caroline
