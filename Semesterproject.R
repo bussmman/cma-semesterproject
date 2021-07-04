@@ -377,21 +377,9 @@ M4 = season[season$DatetimeUTC_rounded
 M4 = traj_ID(M4)
 traj_plot(M4,"Ueli")
 
-# Meeting 5: Ueli and Caroline
-M5 = omit(UC50,max(UC50$n_pos)-1)
-traj_plot(M5,"Ueli")
-
 # Meeting 6: Ueli and Frida
 M6 = omit(UF50,max(UF50$n_pos)-1)
 traj_plot(M6,"Ueli")
-
-# Meeting 10: Ueli and Frida
-M10 = season[season$DatetimeUTC_rounded
-            %in% seq(as_datetime("2016-04-13 07:45:00 UTC"),
-                     as_datetime("2016-04-13 09:00:00 UTC"),
-                     by="15 min"),]
-M10 = traj_ID(M10)
-traj_plot(M10,"Ueli")
 
 ## Add Environmental Context to the Meeting Events
 # Turn Meeting Events into sf-objects
@@ -411,25 +399,14 @@ M4_sf = M4[M4$TierName %in% c("Ueli","Caroline"),]
 M4_sf = st_as_sf(M4_sf, coords = c("E", "N"), crs = 2056)
 M4_sf$Event = "M4"
 
-# Meeting 5
-M5_sf = M5[M5$TierName %in% c("Ueli","Caroline"),]
-M5_sf = st_as_sf(M5_sf, coords = c("E", "N"), crs = 2056)
-M5_sf$Event = "M5"
-M5_sf$n_pos = NULL
-
 # Meeting 6
 M6_sf = M6[M6$TierName %in% c("Ueli","Frida"),]
 M6_sf = st_as_sf(M6_sf, coords = c("E", "N"), crs = 2056)
 M6_sf$Event = "M6"
 M6_sf$n_pos = NULL
 
-# Meeting 10
-M10_sf = M10[M10$TierName %in% c("Ueli","Frida"),]
-M10_sf = st_as_sf(M10_sf, coords = c("E", "N"), crs = 2056)
-M10_sf$Event = "M10"
-
 # Merge Meeting Events together in one data frame
-M_tot = rbind(M2_sf,M3_sf,M4_sf,M5_sf,M6_sf,M10_sf)
+M_tot = rbind(M2_sf,M3_sf,M4_sf,M6_sf)
 M_tot = summarise(group_by(M_tot,Event))
 M_cvx_h = st_convex_hull(M_tot)
 
