@@ -17,6 +17,7 @@ library(sf)           # to handle spatial vector data
 library(terra)        # to handle raster data
 library(lubridate)    # to handle dates and times
 library(tmap)         # to create thematic maps
+library(gridExtra)
 #library(raster)
 #library(zoo)          # to smoothen using moving window functions
 #library(SimilarityMeasures)   # Similarity measures
@@ -103,13 +104,28 @@ omit = function(dat,lim){
 # Plot the trajectories of the boars during a potential
 # mating event
 traj_plot = function(dat,male){
-  ggplot(dat,aes(x=E, y=N, group=interaction(TierName,Traj_ID))) +
-    geom_path(aes(color=TierName)) +
-    geom_point(aes(color=TierName)) +
+  d0 = as.character(min(dat$DatetimeUTC_rounded))
+  d1 = as.character(max(dat$DatetimeUTC_rounded))
+  
+  p1 = ggplot(dat,aes(x=E, y=N, group=interaction(TierName,Traj_ID))) +
+    ggtitle(paste(d0,"-",d1,sep=" ")) +
+    geom_path(aes(color=TierName),show.legend = FALSE) +
+    geom_point(aes(color=TierName),show.legend = FALSE) +
     xlim(min(dat$E[dat$TierName==male])-500,
          max(dat$E[dat$TierName==male])+500) +
     ylim(min(dat$N[dat$TierName==male])-500,
          max(dat$N[dat$TierName==male])+500)
+  
+  p2 = ggplot(dat,aes(x=E, y=N, group=interaction(TierName,Traj_ID))) +
+    ggtitle(paste(d0,"-",d1,sep=" ")) +
+    geom_path(aes(color=TierName)) +
+    geom_point(aes(color=TierName)) +
+    xlim(min(dat$E[dat$TierName==male])-50,
+         max(dat$E[dat$TierName==male])+50) +
+    ylim(min(dat$N[dat$TierName==male])-50,
+         max(dat$N[dat$TierName==male])+50)
+  
+  grid.arrange(p1, p2, ncol=2)
 }
 
 ################################
@@ -166,6 +182,12 @@ males = boar_weight[boar_weight$Sex=="m",]
 females = boar_weight[boar_weight$Sex=="f",]
 unique(males$TierName)                          # 2 males
 unique(females$TierName)                        # 6 females
+
+# Plot the duration of tracking for each wild boar during
+# the mating season
+season %>%
+  ggplot(aes(DatetimeUTC, TierName, colour = TierName)) +
+  geom_point(show.legend = FALSE)
 
 ## Identify the tracked locations during mating season
 ## for each male and female wild boar
@@ -283,27 +305,12 @@ min(Ueli$Caroline, na.rm=TRUE)    # very likely meeting
 min(Ueli$Evelin, na.rm=TRUE) 
 min(Ueli$Frida, na.rm=TRUE)       # very likely meeting
 
-
-## Next Steps:
-# 1. Define a euclidian distance threshold for the definition
-# of a meeting (e.g. 50 m or 100m)
-# 2. Find the datetimes for all meetings
-# 3. Look at the trajectories (for all boars) during
-# (and before/after) the meetings
-# --> For how long did the value fall below the threshold ?
-# (was the meeting likely accidental or not?)
-# --> were other wild boars present?
-# 4. Look for tell-tale movement patterns (if they exist)
-# 5. Look at the environmental information
-# (Surroundings, time of the day, etc.)
-
 ## Examine all the "very likely meetings": Define a euclidian
-## distance threshold (50m, 100m) and examine the trajectories
+## distance threshold (50m) and examine the trajectories
 ## of all wild boars at the times, when the "meeting couple"
 ## was closer to each other than the set threshold
 
-## Amos & Miriam
-# Threshold = 50m
+# Amos & Miriam (Threshold = 50m)
 AM50 = traj(Amos,Miriam,season,50)
 AM50 = traj_ID(AM50)
 AM50 = omit(AM50,1)
@@ -311,14 +318,13 @@ traj_plot(AM50,"Amos")
 
 # Meeting 1: 2015-11-15 18:15:00 - 2015-11-15 18:30:00
 
-# Threshold = 100m
-AM100 = traj(Amos,Miriam,season,100)
-AM100 = traj_ID(AM100)
-AM100 = omit(AM100,3)
-traj_plot(AM100,"Amos")
+# # Threshold = 100m
+# AM100 = traj(Amos,Miriam,season,100)
+# AM100 = traj_ID(AM100)
+# AM100 = omit(AM100,3)
+# traj_plot(AM100,"Amos")
 
-## Amos & Caroline
-# Threshold = 50m
+# Amos & Caroline (Threshold = 50m)
 AC50 = traj(Amos,Caroline,season,50)
 AC50 = traj_ID(AC50)
 AC50 = omit(AC50,1)
@@ -329,14 +335,13 @@ traj_plot(AC50,"Amos")
 # There is only one point missing between meeting 2 and 3
 # --> counts as one meeting (Meeting 2)
 
-# Threshold = 100m
-AC100 = traj(Amos,Caroline,season,100)
-AC100 = traj_ID(AC100)
-AC100 = omit(AC100,1)
-traj_plot(AC100,"Amos")
+# # Threshold = 100m
+# AC100 = traj(Amos,Caroline,season,100)
+# AC100 = traj_ID(AC100)
+# AC100 = omit(AC100,1)
+# traj_plot(AC100,"Amos")
 
-## Ueli & Miriam
-# Threshold = 50m
+# Ueli & Miriam (Threshold = 50m)
 UM50 = traj(Ueli,Miriam,season,50)
 UM50 = traj_ID(UM50)
 UM50 = omit(UM50,1)
@@ -344,14 +349,13 @@ traj_plot(UM50,"Ueli")
 
 # Meeting 3: 2016-02-03 00:00:00 - 2016-02-03 00:30:00
 
-# Threshold = 100m
-UM100 = traj(Ueli,Miriam,season,100)
-UM100 = traj_ID(UM100)
-UM100 = omit(UM100,1)
-traj_plot(UM100,"Ueli")
+# # Threshold = 100m
+# UM100 = traj(Ueli,Miriam,season,100)
+# UM100 = traj_ID(UM100)
+# UM100 = omit(UM100,1)
+# traj_plot(UM100,"Ueli")
 
-## Ueli & Caroline
-# Threshold = 50m
+# Ueli & Caroline (Threshold = 50m)
 UC50 = traj(Ueli,Caroline,season,50)
 UC50 = traj_ID(UC50)
 UC50 = omit(UC50,1)
@@ -363,14 +367,13 @@ traj_plot(UC50,"Ueli")
 # --> counts as one meeting (Meeting 4)
 # Meeting 5: 2016-04-08 20:45:00 - 2016-04-08 21:30:00
 
-# Threshold = 100m
-UC100 = traj(Ueli,Caroline,season,100)
-UC100 = traj_ID(UC100)
-UC100 = omit(UC100,1)
-traj_plot(UC100,"Ueli")
+# # Threshold = 100m
+# UC100 = traj(Ueli,Caroline,season,100)
+# UC100 = traj_ID(UC100)
+# UC100 = omit(UC100,1)
+# traj_plot(UC100,"Ueli")
 
-## Ueli & Frida
-# Threshold = 50m
+# Ueli & Frida (Threshold = 50m)
 UF50 = traj(Ueli,Frida,season,50)
 UF50 = traj_ID(UF50)
 UF50 = omit(UF50,1)
@@ -386,8 +389,94 @@ traj_plot(UF50,"Ueli")
 #Meeting 10: 2016-04-13 07:45:00 - 2016-04-13 09:00:00
 #Meeting 11: 2016-04-28 22:30:00 - 2016-04-28 23:00:00
 
-# Threshold = 100m
-UF100 = traj(Ueli,Frida,season,100)
-UF100 = traj_ID(UF100)
-UF100 = omit(UF100,1)
-traj_plot(UF100,"Ueli")
+# # Threshold = 100m
+# UF100 = traj(Ueli,Frida,season,100)
+# UF100 = traj_ID(UF100)
+# UF100 = omit(UF100,1)
+# traj_plot(UF100,"Ueli")
+
+## Plot selected Meeting events of interest
+# Meeting 2: Amos and Caroline
+M2 = AC50
+traj_plot(M2,"Amos")
+
+# Meeting 3: Ueli, Miriam and Frida
+M3 = season[season$DatetimeUTC_rounded
+            %in% seq(as_datetime("2016-02-02 23:45:00 UTC"),
+                     as_datetime("2016-02-03 00:30:00 UTC"),
+                     by="15 min"),]
+M3 = traj_ID(M3)
+traj_plot(M3,"Ueli")
+
+# Meeting 4: Ueli and Caroline
+M4 = season[season$DatetimeUTC_rounded
+             %in% seq(as_datetime("2016-03-24 20:45:00 UTC"),
+                      as_datetime("2016-03-24 21:45:00 UTC"),
+                      by="15 min"),]
+M4 = traj_ID(M4)
+traj_plot(M4,"Ueli")
+
+# Meeting 5: Ueli and Caroline
+M5 = omit(UC50,max(UC50$n_pos)-1)
+traj_plot(M5,"Ueli")
+
+# Meeting 6: Ueli and Frida
+M6 = omit(UF50,max(UF50$n_pos)-1)
+traj_plot(M6,"Ueli")
+
+# Meeting 10: Ueli and Frida
+M10 = season[season$DatetimeUTC_rounded
+            %in% seq(as_datetime("2016-04-13 07:45:00 UTC"),
+                     as_datetime("2016-04-13 09:00:00 UTC"),
+                     by="15 min"),]
+M10 = traj_ID(M10)
+traj_plot(M10,"Ueli")
+
+## Add Environmental Context to the Meeting Events
+# Turn Meeting Events into sf-objects
+# Meeting 2
+M2_sf = M2[M2$TierName %in% c("Amos","Caroline"),]
+M2_sf = st_as_sf(M2_sf, coords = c("E", "N"), crs = 2056)
+M2_sf$Event = "M2"
+M2_sf$n_pos = NULL
+
+# Meeting 3
+M3_sf = M3[M3$TierName %in% c("Ueli","Miriam","Frida"),]
+M3_sf = st_as_sf(M3_sf, coords = c("E", "N"), crs = 2056)
+M3_sf$Event = "M3"
+
+# Meeting 4
+M4_sf = M4[M4$TierName %in% c("Ueli","Caroline"),]
+M4_sf = st_as_sf(M4_sf, coords = c("E", "N"), crs = 2056)
+M4_sf$Event = "M4"
+
+# Meeting 5
+M5_sf = M5[M5$TierName %in% c("Ueli","Caroline"),]
+M5_sf = st_as_sf(M5_sf, coords = c("E", "N"), crs = 2056)
+M5_sf$Event = "M5"
+M5_sf$n_pos = NULL
+
+# Meeting 6
+M6_sf = M6[M6$TierName %in% c("Ueli","Frida"),]
+M6_sf = st_as_sf(M6_sf, coords = c("E", "N"), crs = 2056)
+M6_sf$Event = "M6"
+M6_sf$n_pos = NULL
+
+# Meeting 10
+M10_sf = M10[M10$TierName %in% c("Ueli","Frida"),]
+M10_sf = st_as_sf(M10_sf, coords = c("E", "N"), crs = 2056)
+M10_sf$Event = "M10"
+
+# Merge Meeting Events together in one data frame
+M_tot = rbind(M2_sf,M3_sf,M4_sf,M5_sf,M6_sf,M10_sf)
+M_tot = summarise(group_by(M_tot,Event))
+M_cvx_h = st_convex_hull(M_tot)
+
+# Plot the convex hull of the meeting events (only including
+# the locations of the wild boars that actually met)
+#tmap_mode("view")
+tm_shape(map_BE) + 
+  tm_rgb() +
+  tm_shape(M_cvx_h) +
+  tm_polygons(col = "Event",alpha = 0.4,border.col = "red") +
+  tm_legend(bg.color = "white")
