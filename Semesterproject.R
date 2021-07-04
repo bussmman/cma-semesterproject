@@ -11,7 +11,6 @@
 library(ComputationalMovementAnalysisData)
                       # to load the wild boar data
 library(ggplot2)      # to visualize data
-library(readr)        # to import tabular data (e.g. csv)
 library(dplyr)        # to manipulate (tabular) data
 library(sf)           # to handle spatial vector data
 library(terra)        # to handle raster data
@@ -111,7 +110,6 @@ traj_plot = function(dat,male){
          max(dat$N[dat$TierName==male])+500)
   
   p2 = ggplot(dat,aes(x=E, y=N, group=interaction(TierName,Traj_ID))) +
-    ggtitle(paste(d0,"-",d1,sep=" ")) +
     geom_path(aes(color=TierName)) +
     geom_point(aes(color=TierName)) +
     xlim(min(dat$E[dat$TierName==male])-50,
@@ -298,7 +296,10 @@ min(Ueli$Frida, na.rm=TRUE)       # very likely meeting
 ## Examine all the "very likely meetings": Define a euclidian
 ## distance threshold (50m) and examine the trajectories
 ## of all wild boars at the times, when the "meeting couple"
-## was closer to each other than the set threshold
+## was closer to each other than the set threshold. Since the
+## entire mating procedure is assumed to take some time, only
+## meetings with at least two consecutive timestamps with
+## a distance below the threshold were selected
 
 # Amos & Miriam (Threshold = 50m)
 AM50 = traj(Amos,Miriam,season,50)
